@@ -41,9 +41,10 @@
   .couple .star{background:rgba(255,255,255,.18);}
   .star.on{background:#16181d;color:var(--card-teen);}
   .couple .star.on{background:#fff;color:var(--card-couple-2);}
-  .badge{position:absolute;top:90px;font-size:24px;font-weight:900;letter-spacing:1px;padding:6px 14px;border-radius:10px;opacity:0;border:3px solid;pointer-events:none;}
-  .badge.save{left:30px;color:#1f8f4e;border-color:#1f8f4e;transform:rotate(-8deg);}
-  .badge.skip{right:30px;color:#b23a48;border-color:#b23a48;transform:rotate(8deg);}
+  .badge{position:absolute;font-size:24px;font-weight:900;letter-spacing:1px;padding:6px 14px;border-radius:10px;opacity:0;border:3px solid;pointer-events:none;}
+  .badge.save{top:28px;left:50%;transform:translateX(-50%);color:#1f8f4e;border-color:#1f8f4e;}
+  .badge.next{top:90px;left:30px;color:#2a6f97;border-color:#2a6f97;transform:rotate(-8deg);}
+  .badge.back{top:90px;right:30px;color:#8a6d3b;border-color:#8a6d3b;transform:rotate(8deg);}
   .controls{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:18px;padding:16px 20px calc(14px + env(safe-area-inset-bottom));}
   .nav{width:64px;height:64px;border-radius:50%;border:1px solid var(--line);background:#161b24;color:var(--paper);font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s;}
   .nav:active{transform:scale(.92);}
@@ -114,11 +115,11 @@ function buildOrder(){const g=DECKS[deck];let pool=[];for(const c in g){if(cat==
 const stage=document.getElementById('stage');
 let topCard=null,underCard=null;
 function makeCard(item){const el=document.createElement('div');el.className='card '+deck;
-  el.innerHTML='<div class="badge save">SAVE</div><div class="badge skip">SKIP</div>'+
+  el.innerHTML='<div class="badge save">SAVE</div><div class="badge next">NEXT</div><div class="badge back">BACK</div>'+
    '<button class="star '+(isStarred(item)?'on':'')+'">'+(isStarred(item)?'★':'☆')+'</button>'+
    '<div class="cat">'+(CATLABEL[item.cat]||item.cat)+'</div>'+
    '<div class="q">'+item.q+'</div>'+
-   '<div class="foot"><span>'+(deck==='teen'?'Taco Tinks':'Mr & Mrs')+'</span><span>← save · skip →</span></div>';
+   '<div class="foot"><span>'+(deck==='teen'?'Taco Tinks':'Mr & Mrs')+'</span><span>↑ save · ← next · → back</span></div>';
   el.querySelector('.star').addEventListener('click',ev=>{ev.stopPropagation();toggleStar();});
   return el;}
 function mount(){stage.querySelectorAll('.card').forEach(c=>c.remove());
@@ -128,23 +129,42 @@ function mount(){stage.querySelectorAll('.card').forEach(c=>c.remove());
   document.getElementById('counter').textContent=(idx+1)+' / '+order.length;syncStarBtn();}
 function syncStarBtn(){document.getElementById('starBtn').textContent=isStarred(order[idx])?'★':'☆';document.getElementById('starCount').textContent=starred.length;}
 
+function snapBack(el){el.style.transition='transform .22s cubic-bezier(.2,.8,.3,1)';el.style.transform='';
+  el.querySelectorAll('.badge').forEach(b=>b.style.opacity=0);
+  if(underCard){underCard.style.transition='.22s';underCard.style.transform='scale(.96) translateY(10px)';underCard.style.opacity='.85';}}
 function attach(el){let sx=0,sy=0,dx=0,dy=0,down=false,t0=0,locked=null;
-  const save=el.querySelector('.badge.save'),skip=el.querySelector('.badge.skip');
+  const save=el.querySelector('.badge.save'),next=el.querySelector('.badge.next'),back=el.querySelector('.badge.back');
   el.addEventListener('pointerdown',e=>{down=true;sx=e.clientX;sy=e.clientY;t0=Date.now();locked=null;el.setPointerCapture(e.pointerId);el.style.transition='none';});
   el.addEventListener('pointermove',e=>{if(!down)return;dx=e.clientX-sx;dy=e.clientY-sy;
     if(locked===null&&(Math.abs(dx)>6||Math.abs(dy)>6))locked=Math.abs(dx)>Math.abs(dy)?'x':'y';
-    if(locked!=='x')return;
-    el.style.transform='translateX('+dx+'px) rotate('+(dx*0.05)+'deg)';
-    const p=Math.min(1,Math.abs(dx)/120);save.style.opacity=dx<0?p:0;skip.style.opacity=dx>0?p:0;
-    if(underCard){const s=.96+.04*p;underCard.style.transform='scale('+s+') translateY('+(10-10*p)+'px)';underCard.style.opacity=.85+.15*p;}});
-  el.addEventListener('pointerup',()=>{if(!down)return;down=false;const dt=Date.now()-t0,vel=Math.abs(dx)/dt;const go=Math.abs(dx)>110||vel>0.6;
-    if(go&&locked==='x'){const dir=dx<0?-1:1;if(dir<0&&!isStarred(order[idx]))toggleStarSilent();fly(el,dir);}
-    else{el.style.transition='transform .22s cubic-bezier(.2,.8,.3,1)';el.style.transform='';save.style.opacity=0;skip.style.opacity=0;if(underCard){underCard.style.transition='.22s';underCard.style.transform='scale(.96) translateY(10px)';underCard.style.opacity='.85';}}});}
-function fly(el,dir){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateX('+(dir*window.innerWidth*1.2)+'px) rotate('+(dir*14)+'deg)';el.style.opacity='0';
+    if(locked==='x'){
+      el.style.transform='translateX('+dx+'px) rotate('+(dx*0.05)+'deg)';
+      const p=Math.min(1,Math.abs(dx)/120);next.style.opacity=dx<0?p:0;back.style.opacity=dx>0?p:0;save.style.opacity=0;
+      const grow=dx<0?p:0;if(underCard){const s=.96+.04*grow;underCard.style.transform='scale('+s+') translateY('+(10-10*grow)+'px)';underCard.style.opacity=.85+.15*grow;}
+    }else if(locked==='y'){
+      const uy=Math.min(0,dy);el.style.transform='translateY('+uy+'px)';
+      const p=Math.min(1,-uy/120);save.style.opacity=p;next.style.opacity=0;back.style.opacity=0;
+      if(underCard){const s=.96+.04*p;underCard.style.transform='scale('+s+') translateY('+(10-10*p)+'px)';underCard.style.opacity=.85+.15*p;}
+    }});
+  el.addEventListener('pointerup',()=>{if(!down)return;down=false;const dt=Date.now()-t0;
+    if(locked==='x'){const vel=Math.abs(dx)/dt,go=Math.abs(dx)>110||vel>0.6;
+      if(go&&dx<0)flyNext(el,-1);else if(go&&dx>0)goPrev(el);else snapBack(el);}
+    else if(locked==='y'){const vel=-dy/dt,go=(-dy)>110||vel>0.6;
+      if(go&&dy<0){if(!isStarred(order[idx]))toggleStarSilent();flyUp(el);}else snapBack(el);}
+    else snapBack(el);});}
+function advance(){idx=(idx+1)%order.length;if(idx===0)buildOrder();mount();}
+function flyNext(el,dir){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateX('+(dir*window.innerWidth*1.2)+'px) rotate('+(dir*14)+'deg)';el.style.opacity='0';
   if(underCard){underCard.style.transition='.26s';underCard.style.transform='scale(1)';underCard.style.opacity='1';}
-  setTimeout(()=>{idx=(idx+1)%order.length;if(idx===0)buildOrder();mount();},200);}
-function btnNext(){if(topCard)fly(topCard,1);}
-function btnPrev(){idx=(idx-1+order.length)%order.length;mount();if(topCard){topCard.style.transition='none';topCard.style.transform='translateX(-40px)';topCard.style.opacity='0';requestAnimationFrame(()=>{topCard.style.transition='.22s';topCard.style.transform='';topCard.style.opacity='1';});}}
+  setTimeout(advance,200);}
+function flyUp(el){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateY('+(-window.innerHeight*1.1)+'px) rotate(-4deg)';el.style.opacity='0';
+  if(underCard){underCard.style.transition='.26s';underCard.style.transform='scale(1)';underCard.style.opacity='1';}
+  setTimeout(advance,200);}
+function goPrev(el){if(el){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateX('+(window.innerWidth*1.2)+'px) rotate(14deg)';el.style.opacity='0';}
+  setTimeout(()=>{idx=(idx-1+order.length)%order.length;mount();
+    if(topCard){topCard.style.transition='none';topCard.style.transform='translateY('+(-window.innerHeight*0.55)+'px)';topCard.style.opacity='0';
+      requestAnimationFrame(()=>{topCard.style.transition='transform .3s cubic-bezier(.2,.8,.3,1), opacity .3s';topCard.style.transform='';topCard.style.opacity='1';});}},200);}
+function btnNext(){if(topCard)flyNext(topCard,-1);}
+function btnPrev(){goPrev(topCard);}
 function shuffleDeck(){buildOrder();mount();}
 
 function setDeck(d){deck=d;cat="all";
@@ -173,7 +193,7 @@ function renderSlist(){const l=document.getElementById('slist');if(!starred.leng
     d.innerHTML='<span class="tag">'+(s.deck==='teen'?'Taco Tinks':'Mr & Mrs')+' · '+(CATLABEL[s.cat]||s.cat)+'</span>'+s.q+'<button class="x">✕</button>';
     d.querySelector('.x').onclick=()=>{const r=starred.splice(i,1)[0];removeRemote(r);persistLocal();renderSlist();syncStarBtn();mount();};l.appendChild(d);});}
 
-document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')btnNext();if(e.key==='ArrowLeft'){if(!isStarred(order[idx]))toggleStar();btnNext();}if(e.key===' '){e.preventDefault();toggleStar();}});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key===' '){e.preventDefault();toggleStar();}});
 setDeck('teen');loadStars();
 </script>
 </body>
