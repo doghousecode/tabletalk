@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>TableTalk</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <style>
   :root{
     --bg:#0e1117;
@@ -60,9 +62,9 @@
 </head>
 <body>
 <header>
-  <div class="brand" id="brand">Taco<span> Tinks</span></div>
+  <div class="brand" id="brand">Table<span>Talk</span></div>
   <span class="sync" id="sync">·</span>
-  <button class="modebtn" id="modeBtn" onclick="flipDeck()">Mr &amp; Mrs ⇄</button>
+  <button class="modebtn" id="modeBtn" onclick="flipDeck()">Taco Tinks ⇄</button>
   <button class="topbtn" id="starredBtn">⭐ <span id="starCount">0</span></button>
 </header>
 <div class="chips" id="chips"></div>
@@ -146,9 +148,8 @@ function btnPrev(){idx=(idx-1+order.length)%order.length;mount();if(topCard){top
 function shuffleDeck(){buildOrder();mount();}
 
 function setDeck(d){deck=d;cat="all";
-  document.getElementById('brand').innerHTML = d==='teen' ? 'Taco<span> Tinks</span>' : 'Mr<span> &amp; Mrs</span>';
   const mb=document.getElementById('modeBtn');
-  mb.innerHTML = d==='teen' ? 'Mr &amp; Mrs ⇄' : 'Taco Tinks ⇄';
+  mb.innerHTML = d==='teen' ? 'Taco Tinks ⇄' : 'Mr &amp; Mrs ⇄';
   mb.className='modebtn'+(d==='couple'?' couple':'');
   renderChips();buildOrder();mount();}
 function flipDeck(){setDeck(deck==='teen'?'couple':'teen');}
