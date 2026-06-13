@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TableTalk</title>
+<style>
+  :root{
+    --bg:#0e1117;
+    --card-teen:#f2c14e;--card-teen-2:#f4a259;
+    --card-couple:#e26d7e;--card-couple-2:#c84b6e;
+    --ink:#16181d;--paper:#fbf7ef;--mute:#7a818c;--line:#222732;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--paper);display:flex;flex-direction:column;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);user-select:none;touch-action:none;}
+  header{flex:0 0 auto;padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-weight:800;letter-spacing:-.5px;font-size:20px;}
+  .brand span{opacity:.45;font-weight:600;}
+  .topbtn{background:none;border:1px solid var(--line);color:var(--paper);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .sync{font-size:10px;color:var(--mute);margin-right:auto;margin-left:12px;font-weight:600;}
+  .sync.ok{color:#5fd08a;}.sync.err{color:#e2725b;}
+  .modebtn{background:none;border:1px solid var(--line);color:var(--mute);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-right:8px;}
+  .modebtn.couple{color:var(--card-couple);border-color:var(--card-couple);}
+  .chips{flex:0 0 auto;display:flex;gap:8px;overflow-x:auto;padding:6px 20px 10px;scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto;background:#161b24;border:1px solid var(--line);color:var(--mute);padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .chip.on{background:var(--paper);color:var(--ink);border-color:var(--paper);}
+  .stage{flex:1 1 auto;position:relative;margin:6px 18px 0;min-height:0;}
+  .card{position:absolute;inset:0;border-radius:26px;padding:34px 30px;display:flex;flex-direction:column;color:var(--ink);box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden;}
+  .card.teen{background:linear-gradient(150deg,var(--card-teen),var(--card-teen-2));}
+  .card.couple{background:linear-gradient(150deg,var(--card-couple),var(--card-couple-2));color:#fff;}
+  .card .cat{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;opacity:.6;}
+  .card .q{flex:1;display:flex;align-items:center;font-size:clamp(26px,6.4vw,40px);font-weight:800;line-height:1.18;letter-spacing:-.5px;}
+  .card .foot{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;opacity:.5;}
+  .star{position:absolute;top:22px;right:22px;width:46px;height:46px;border-radius:50%;border:none;background:rgba(0,0,0,.12);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;z-index:3;}
+  .couple .star{background:rgba(255,255,255,.18);}
+  .star.on{background:#16181d;color:var(--card-teen);}
+  .couple .star.on{background:#fff;color:var(--card-couple-2);}
+  .badge{position:absolute;top:90px;font-size:24px;font-weight:900;letter-spacing:1px;padding:6px 14px;border-radius:10px;opacity:0;border:3px solid;pointer-events:none;}
+  .badge.save{left:30px;color:#1f8f4e;border-color:#1f8f4e;transform:rotate(-8deg);}
+  .badge.skip{right:30px;color:#b23a48;border-color:#b23a48;transform:rotate(8deg);}
+  .controls{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:18px;padding:16px 20px calc(14px + env(safe-area-inset-bottom));}
+  .nav{width:64px;height:64px;border-radius:50%;border:1px solid var(--line);background:#161b24;color:var(--paper);font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s;}
+  .nav:active{transform:scale(.92);}
+  .nav.big{width:74px;height:74px;background:var(--paper);color:var(--ink);font-size:30px;}
+  .counter{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:var(--mute);font-weight:600;pointer-events:none;}
+  .sheet{position:fixed;inset:0;background:var(--bg);z-index:50;transform:translateY(100%);transition:.28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);}
+  .sheet.open{transform:translateY(0);}
+  .sheet h2{padding:20px;font-size:22px;display:flex;justify-content:space-between;align-items:center;}
+  .sheet .close{background:none;border:none;color:var(--paper);font-size:26px;cursor:pointer;}
+  .slist{flex:1;overflow-y:auto;padding:0 18px 24px;display:flex;flex-direction:column;gap:12px;}
+  .sitem{background:#161b24;border:1px solid var(--line);border-radius:16px;padding:18px;font-size:17px;font-weight:600;line-height:1.35;position:relative;}
+  .sitem .tag{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.5;display:block;margin-bottom:8px;}
+  .sitem .x{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--mute);font-size:20px;cursor:pointer;}
+  .empty{color:var(--mute);text-align:center;padding:60px 30px;font-size:16px;line-height:1.5;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" id="brand">Taco<span> Tinks</span></div>
+  <span class="sync" id="sync">·</span>
+  <button class="modebtn" id="modeBtn" onclick="flipDeck()">Mr &amp; Mrs ⇄</button>
+  <button class="topbtn" id="starredBtn">⭐ <span id="starCount">0</span></button>
+</header>
+<div class="chips" id="chips"></div>
+<div class="stage" id="stage"><div class="counter" id="counter"></div></div>
+<div class="controls">
+  <button class="nav" onclick="btnPrev()" aria-label="Previous">‹</button>
+  <button class="nav big" id="starBtn" onclick="toggleStar()" aria-label="Star">☆</button>
+  <button class="nav" onclick="shuffleDeck()" aria-label="Shuffle">⤮</button>
+  <button class="nav" onclick="btnNext()" aria-label="Next">›</button>
+</div>
+<div class="sheet" id="sheet">
+  <h2>Saved questions <button class="close" onclick="closeSheet()">✕</button></h2>
+  <div class="slist" id="slist"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== SUPABASE CONFIG — fill these two in ===== */
+const SB_URL = "https://dycnheibkjjqlmthkkyk.supabase.co";
+const SB_KEY = "sb_publishable_cVz9GemYtiI5sYtt9jzniQ_1UAEkWcn";
+const PROFILE = localStorage.getItem('tt_profile') || (()=>{const id='dev-'+Math.random().toString(36).slice(2,9);localStorage.setItem('tt_profile',id);return id;})();
+let sb=null,remote=false;
+try{ if(SB_URL.indexOf('YOUR')<0){ sb=supabase.createClient(SB_URL,SB_KEY); remote=true; } }catch(e){}
+const syncEl=document.getElementById('sync');
+function setSync(t,c){syncEl.textContent=t;syncEl.className='sync'+(c?' '+c:'');}
+
+const DECKS={
+ teen:{
+  fun:["If you could instantly master any skill, what would it be and why?","What's the most ridiculous thing you've ever convinced someone was true?","If our family had a reality TV show, what would it be called?","What's a small thing that makes you weirdly happy?","If you could swap lives with anyone for 24 hours, who and why?","What's the best meme or video you've seen recently?","If you had unlimited money for one weekend, what would you do?","What three things would you grab if the house was on fire (everyone's already safe)?","If you could rename yourself, what name would you pick?","What's the strangest food combo you secretly love?","If animals could talk, which would be the rudest?","What's a trend right now that you think is genuinely dumb?","If you could have any animal as a pet, no limits, what would it be?","What's the most useless talent you have?","If you could only eat one cuisine for life, what's it gonna be?","What would your superhero name and power be?","What's the funniest thing that's happened to you at school?","If you could time travel, forward or back, and where to?","What's a game you could play forever and never get bored of?","If you ran the world for a day, what's your first rule?"],
+  deep:["What's something you're proud of that you don't think anyone noticed?","When do you feel most like yourself?","What's something you used to believe that you've changed your mind about?","Who's someone you admire, and what specifically about them?","What's a fear you have that you've never really talked about?","When was the last time you felt really proud of yourself?","What do you think people get wrong about you?","What's something you wish I understood better about you?","What does a perfect day look like for you right now?","What's something hard you've gotten through that made you stronger?","Who in your life makes you feel calm, and why?","What's a mistake you made that actually taught you something?","If you could change one thing about how our family works, what would it be?","What's something you're curious about but never ask?","When do you feel the most pressure, and where does it come from?","What kind of person do you want to be when you're older?","What's something kind someone did for you that stuck with you?","What's a friendship that's really mattered to you and why?","What's something you wish you were braver about?","If you could tell your younger self one thing, what would it be?"],
+  wyr:["Would you rather be able to fly or be invisible?","Would you rather never use a phone again or never watch TV/films again?","Would you rather be famous or be rich but unknown?","Would you rather always be 10 minutes late or 20 minutes early?","Would you rather have a rewind button or a pause button for life?","Would you rather live without music or without games?","Would you rather be the funniest or the smartest person in the room?","Would you rather explore space or the deep ocean?","Would you rather only whisper or only shout for a whole day?","Would you rather have free travel forever or free food forever?","Would you rather read minds or see one day into the future?","Would you rather never feel cold or never feel too hot?","Would you rather be amazing at sport or amazing at music?","Would you rather have a dragon or a unicorn?","Would you rather live in a city forever or the countryside forever?","Would you rather always know when someone's lying or always get away with lying?","Would you rather restart this year or skip to next year?","Would you rather teleport or never need sleep?","Would you rather give up snacks or give up takeaways?","Would you rather be a brilliant artist or a brilliant athlete?"],
+  family:["What's your favourite memory of us as a family?","What family tradition do you secretly love?","What's a holiday or trip you wish we'd do again?","What's something you think our family is really good at?","If we could move anywhere in the world, where should it be?","What's the best meal we make at home?","What's a tradition you'd want to keep when you have your own family?","What's the funniest argument our family has ever had?","Who in the family are you most like, and how?","What's something you'd love us to do together more often?","What's the best advice anyone in our family has given you?","If we got a new pet, what would you name it?","What's a film our whole family actually agrees on?","What makes our family different from your friends' families?","What's something you appreciate about your brother?","What's a place that feels like 'home' to you?","What's the best gift you've ever been given?","What's a song that reminds you of our family?","What house rule do you think is fair, and which is unfair?","What's something you'd want us to remember about you in 10 years?"]
+ },
+ couple:{
+  playful:["What was your very first impression of me, honestly?","What's the most attractive non-physical thing about me?","If we wrote a book about us, what would the title be?","What's a tiny habit of mine you've grown to love?","What song instantly takes you back to early us?","If we could relive one date, which one?","What's something I do that always makes you laugh?","What's a nickname you've secretly thought of for me?","What would our perfect lazy Sunday look like?","If we won the lottery tomorrow, first ridiculous buy?","What's the best trip we've ever taken together?","What's something silly we do that no one else would get?","If we swapped jobs for a week, who'd cope better?","What food could you watch me eat forever, and what makes you cringe?","What memory of us still makes you smile out of nowhere?","What's the most spontaneous thing we've done together?","If you planned a surprise day for me, what's in it?","What show could we watch on loop forever?","What's the best gift I've ever given you?","What's something you'd love us to try that we never have?"],
+  deep:["When do you feel most loved by me?","What's something you need more of from me right now?","What are you most proud of us for getting through?","When did you know this was serious?","What's a fear about us we've never said out loud?","How have I changed since we met, for better or worse?","What's something you wish I asked you about more often?","What does feeling supported look like for you?","What's a way I could show up better for you?","What part of our life together are you most grateful for?","What's something you're carrying that I might not see?","When do you feel most distant from me, and what helps?","What's a dream of yours I might not fully understand yet?","How do you want us to handle disagreements differently?","What's something you've forgiven me for that I might not realise?","What makes you feel like a team with me?","What do you hope people say about our relationship?","What's a small thing I do that means more than I know?","Where do you feel we've grown the most together?","What's something you want to be braver about, together?"],
+  memories:["What's your single favourite memory of us?","What's the moment you realised you were falling for me?","Which version of us from the past do you miss?","What hard time made us stronger?","What's the first thing that genuinely made you laugh about me?","What's a place that will always belong to us?","What was going through your head on our wedding day?","What's a tradition we've built that you treasure?","What's the bravest thing you've seen me do?","When have you felt proudest to be with me?","What everyday moment with me would you never want to forget?","What's a risk we took together that paid off?","What's the best decision we ever made as a couple?","What moment with the boys melted you the most?","What's a photo of us that says everything?","What from our early days would you love to bring back?","What's the kindest thing I've done for you?","What surprised you most about building a life with me?","What quiet moment together have you never forgotten?","If we made a highlight reel of us, what's the closing scene?"],
+  future:["Where do you picture us in ten years?","What's a dream you want us to chase next?","What's on your bucket list you want us to do together?","What kind of older couple do you hope we become?","Where in the world would you love us to live one day?","What's a new thing you'd like us to learn together?","What do you want our home to feel like in five years?","What adventure do you want before the boys leave home?","What does 'success' look like for us as a family?","What habit would you love us to start together?","What tradition do you want us to create from scratch?","What do you want our retirement to look like?","What's something you want us to be braver about chasing?","How do you want to celebrate the next big milestone?","What place do you want to take the boys before they're grown?","What's one promise you'd want us to make to each other now?","What do you want more of in our daily life next year?","If we designed our ideal week, what's in it?","What goal could we work toward as a team this year?","What do you most look forward to about growing old with me?"]
+ }
+};
+const CATS={teen:[["all","All"],["fun","Fun"],["deep","Deep"],["wyr","Would You Rather"],["family","Family"]],couple:[["all","All"],["playful","Playful"],["deep","Deep"],["memories","Memories"],["future","Future"]]};
+const CATLABEL={fun:"Fun",deep:"Deep",wyr:"Would You Rather",family:"Family",playful:"Playful",memories:"Memories",future:"Future"};
+
+let deck="teen",cat="all",order=[],idx=0,starred=[];
+const isStarred=it=>starred.some(s=>s.deck===deck&&s.q===it.q);
+function buildOrder(){const g=DECKS[deck];let pool=[];for(const c in g){if(cat==="all"||cat===c)g[c].forEach(q=>pool.push({cat:c,q}));}for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}order=pool;idx=0;}
+
+const stage=document.getElementById('stage');
+let topCard=null,underCard=null;
+function makeCard(item){const el=document.createElement('div');el.className='card '+deck;
+  el.innerHTML='<div class="badge save">SAVE</div><div class="badge skip">SKIP</div>'+
+   '<button class="star '+(isStarred(item)?'on':'')+'">'+(isStarred(item)?'★':'☆')+'</button>'+
+   '<div class="cat">'+(CATLABEL[item.cat]||item.cat)+'</div>'+
+   '<div class="q">'+item.q+'</div>'+
+   '<div class="foot"><span>'+(deck==='teen'?'Taco Tinks':'Mr & Mrs')+'</span><span>← save · skip →</span></div>';
+  el.querySelector('.star').addEventListener('click',ev=>{ev.stopPropagation();toggleStar();});
+  return el;}
+function mount(){stage.querySelectorAll('.card').forEach(c=>c.remove());
+  const cur=order[idx],nxt=order[(idx+1)%order.length];
+  underCard=makeCard(nxt);underCard.style.transform='scale(.96) translateY(10px)';underCard.style.opacity='.85';
+  topCard=makeCard(cur);stage.appendChild(underCard);stage.appendChild(topCard);attach(topCard);
+  document.getElementById('counter').textContent=(idx+1)+' / '+order.length;syncStarBtn();}
+function syncStarBtn(){document.getElementById('starBtn').textContent=isStarred(order[idx])?'★':'☆';document.getElementById('starCount').textContent=starred.length;}
+
+function attach(el){let sx=0,sy=0,dx=0,dy=0,down=false,t0=0,locked=null;
+  const save=el.querySelector('.badge.save'),skip=el.querySelector('.badge.skip');
+  el.addEventListener('pointerdown',e=>{down=true;sx=e.clientX;sy=e.clientY;t0=Date.now();locked=null;el.setPointerCapture(e.pointerId);el.style.transition='none';});
+  el.addEventListener('pointermove',e=>{if(!down)return;dx=e.clientX-sx;dy=e.clientY-sy;
+    if(locked===null&&(Math.abs(dx)>6||Math.abs(dy)>6))locked=Math.abs(dx)>Math.abs(dy)?'x':'y';
+    if(locked!=='x')return;
+    el.style.transform='translateX('+dx+'px) rotate('+(dx*0.05)+'deg)';
+    const p=Math.min(1,Math.abs(dx)/120);save.style.opacity=dx<0?p:0;skip.style.opacity=dx>0?p:0;
+    if(underCard){const s=.96+.04*p;underCard.style.transform='scale('+s+') translateY('+(10-10*p)+'px)';underCard.style.opacity=.85+.15*p;}});
+  el.addEventListener('pointerup',()=>{if(!down)return;down=false;const dt=Date.now()-t0,vel=Math.abs(dx)/dt;const go=Math.abs(dx)>110||vel>0.6;
+    if(go&&locked==='x'){const dir=dx<0?-1:1;if(dir<0&&!isStarred(order[idx]))toggleStarSilent();fly(el,dir);}
+    else{el.style.transition='transform .22s cubic-bezier(.2,.8,.3,1)';el.style.transform='';save.style.opacity=0;skip.style.opacity=0;if(underCard){underCard.style.transition='.22s';underCard.style.transform='scale(.96) translateY(10px)';underCard.style.opacity='.85';}}});}
+function fly(el,dir){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateX('+(dir*window.innerWidth*1.2)+'px) rotate('+(dir*14)+'deg)';el.style.opacity='0';
+  if(underCard){underCard.style.transition='.26s';underCard.style.transform='scale(1)';underCard.style.opacity='1';}
+  setTimeout(()=>{idx=(idx+1)%order.length;if(idx===0)buildOrder();mount();},200);}
+function btnNext(){if(topCard)fly(topCard,1);}
+function btnPrev(){idx=(idx-1+order.length)%order.length;mount();if(topCard){topCard.style.transition='none';topCard.style.transform='translateX(-40px)';topCard.style.opacity='0';requestAnimationFrame(()=>{topCard.style.transition='.22s';topCard.style.transform='';topCard.style.opacity='1';});}}
+function shuffleDeck(){buildOrder();mount();}
+
+function setDeck(d){deck=d;cat="all";
+  document.getElementById('brand').innerHTML = d==='teen' ? 'Taco<span> Tinks</span>' : 'Mr<span> &amp; Mrs</span>';
+  const mb=document.getElementById('modeBtn');
+  mb.innerHTML = d==='teen' ? 'Mr &amp; Mrs ⇄' : 'Taco Tinks ⇄';
+  mb.className='modebtn'+(d==='couple'?' couple':'');
+  renderChips();buildOrder();mount();}
+function flipDeck(){setDeck(deck==='teen'?'couple':'teen');}
+function renderChips(){const w=document.getElementById('chips');w.innerHTML='';CATS[deck].forEach(([k,l])=>{const b=document.createElement('button');b.className='chip'+(cat===k?' on':'');b.textContent=l;b.onclick=()=>{cat=k;renderChips();buildOrder();mount();};w.appendChild(b);});}
+
+function toggleStar(){const it=order[idx];const i=starred.findIndex(s=>s.deck===deck&&s.q===it.q);if(i>=0){const r=starred.splice(i,1)[0];removeRemote(r);}else{const r={deck,cat:it.cat,q:it.q};starred.push(r);saveRemote(r);}persistLocal();mount();}
+function toggleStarSilent(){const it=order[idx];if(isStarred(it))return;const r={deck,cat:it.cat,q:it.q};starred.push(r);saveRemote(r);persistLocal();}
+function persistLocal(){localStorage.setItem('tt_starred',JSON.stringify(starred));}
+async function saveRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').upsert({profile:PROFILE,deck:r.deck,cat:r.cat,q:r.q},{onConflict:'profile,deck,q'});setSync('saved','ok');}catch(e){setSync('offline','err');}}
+async function removeRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').delete().match({profile:PROFILE,deck:r.deck,q:r.q});}catch(e){}}
+async function loadStars(){const local=JSON.parse(localStorage.getItem('tt_starred')||'[]');starred=local;
+  if(remote){try{const {data,error}=await sb.from('tabletalk_stars').select('deck,cat,q').eq('profile',PROFILE);
+    if(!error&&data){const seen=new Set();starred=[];data.forEach(r=>{const k=r.deck+'|'+r.q;if(!seen.has(k)){seen.add(k);starred.push(r);}});persistLocal();setSync('synced','ok');}}catch(e){setSync('offline','err');}}else setSync('local only');
+  syncStarBtn();}
+
+const sheet=document.getElementById('sheet');
+document.getElementById('starredBtn').onclick=()=>{renderSlist();sheet.classList.add('open');};
+function closeSheet(){sheet.classList.remove('open');}
+function renderSlist(){const l=document.getElementById('slist');if(!starred.length){l.innerHTML='<div class="empty">No saved questions yet.<br>Swipe a card left, or tap the star, to keep it here for later.</div>';return;}
+  l.innerHTML='';starred.forEach((s,i)=>{const d=document.createElement('div');d.className='sitem';
+    d.innerHTML='<span class="tag">'+(s.deck==='teen'?'Taco Tinks':'Mr & Mrs')+' · '+(CATLABEL[s.cat]||s.cat)+'</span>'+s.q+'<button class="x">✕</button>';
+    d.querySelector('.x').onclick=()=>{const r=starred.splice(i,1)[0];removeRemote(r);persistLocal();renderSlist();syncStarBtn();mount();};l.appendChild(d);});}
+
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')btnNext();if(e.key==='ArrowLeft'){if(!isStarred(order[idx]))toggleStar();btnNext();}if(e.key===' '){e.preventDefault();toggleStar();}});
+setDeck('teen');loadStars();
+</script>
+</body>
+</html>
