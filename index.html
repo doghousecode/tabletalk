@@ -19,8 +19,9 @@
   html,body{height:100%;overflow:hidden;}
   body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--paper);display:flex;flex-direction:column;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);user-select:none;touch-action:none;}
   header{flex:0 0 auto;padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
-  .brand{font-weight:800;letter-spacing:-.5px;font-size:20px;}
-  .brand span{opacity:.45;font-weight:600;}
+  .brand{font-weight:800;letter-spacing:-.5px;font-size:20px;display:flex;align-items:center;gap:8px;}
+  .brand .name span{opacity:.45;font-weight:600;}
+  .brandicon{width:26px;height:26px;border-radius:7px;flex:0 0 auto;}
   .topbtn{background:none;border:1px solid var(--line);color:var(--paper);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;}
   .sync{font-size:10px;color:var(--mute);margin-right:auto;margin-left:12px;font-weight:600;}
   .sync.ok{color:#5fd08a;}.sync.err{color:#e2725b;}
@@ -62,7 +63,7 @@
 </head>
 <body>
 <header>
-  <div class="brand" id="brand">Table<span>Talk</span></div>
+  <div class="brand" id="brand"><img class="brandicon" src="apple-touch-icon.png" alt=""><span class="name">Table<span>Talk</span></span></div>
   <span class="sync" id="sync">·</span>
   <button class="modebtn" id="modeBtn" onclick="flipDeck()">Taco Tinks ⇄</button>
   <button class="topbtn" id="starredBtn">⭐ <span id="starCount">0</span></button>
