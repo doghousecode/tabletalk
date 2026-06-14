@@ -46,7 +46,8 @@
   .themebox.show{display:flex;gap:8px;}
   .themebox input{flex:1;background:#161b24;border:1px solid var(--line);color:var(--paper);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;outline:none;}
   .themebox input::placeholder{color:var(--mute);opacity:.7;}
-  .themebox .go{flex:0 0 auto;background:none;border:1px solid var(--line);color:var(--mute);border-radius:999px;padding:0 14px;font-size:14px;cursor:not-allowed;}
+  .themebox .go{flex:0 0 auto;background:none;border:1px solid var(--line);color:var(--paper);border-radius:999px;padding:0 14px;font-size:14px;cursor:pointer;}
+  .themebox .go:disabled{cursor:default;opacity:.6;}
   .stage{flex:1 1 auto;position:relative;margin:6px 18px 0;min-height:0;}
   .card{position:absolute;inset:0;border-radius:26px;padding:34px 30px;display:flex;flex-direction:column;color:var(--ink);box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden;}
   .card.teen{background:linear-gradient(150deg,var(--card-teen),var(--card-teen-2));}
@@ -107,7 +108,7 @@
   <button class="topbtn" id="starredBtn">⭐ <span id="starCount">0</span></button>
 </header>
 <div class="chips" id="chips"></div>
-<div class="themebox" id="themeBox"><input id="themeInput" type="text" autocomplete="off" placeholder="Make jokes about… (BETA)"><button class="go" title="Coming soon">✨</button></div>
+<div class="themebox" id="themeBox"><input id="themeInput" type="text" autocomplete="off" placeholder="Make jokes about… (e.g. cats, Mondays)"><button class="go" id="genBtn" title="Generate a joke">✨</button></div>
 <div class="stage" id="stage"><div class="counter" id="counter"></div></div>
 <div class="controls">
   <button class="nav" onclick="btnPrev()" aria-label="Previous">‹</button>
@@ -266,6 +267,16 @@ function goPrev(){const W=stage.clientWidth,pc=makeCard(order[(idx-1+order.lengt
 function btnNext(){if(topCard)flyNext(topCard,-1);}
 function btnPrev(){goPrev();}
 function shuffleDeck(){buildOrder();mount();}
+const FN_URL=SB_URL.replace(/\/$/,'')+'/functions/v1/joke';
+let genBusy=false;
+async function genJoke(){if(genBusy||deck!=='jokes')return;const btn=document.getElementById('genBtn');const theme=(document.getElementById('themeInput').value||'').trim();
+  genBusy=true;if(btn){btn.disabled=true;btn.textContent='⏳';}renderSync('writing…');
+  try{const r=await fetch(FN_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},body:JSON.stringify({theme,category:cat})});
+    const d=await r.json().catch(()=>({}));if(!r.ok||!d.joke)throw new Error(d.error||'failed');
+    const genCat=['dad','oneliners','limericks','xrated'].includes(cat)?cat:'oneliners';
+    order.splice(idx,0,{cat:genCat,q:d.joke});mount();flashSync('fresh joke','ok');
+  }catch(e){flashSync('joke failed','err');}
+  finally{genBusy=false;if(btn){btn.disabled=false;btn.textContent='✨';}}}
 
 function setDeck(d){deck=d;cat="all";
   const mb=document.getElementById('modeBtn');
@@ -294,7 +305,9 @@ function renderSlist(){const l=document.getElementById('slist');if(!starred.leng
     d.innerHTML='<span class="tag">'+(DECKNAME[s.deck]||s.deck)+' · '+(CATLABEL[s.cat]||s.cat)+'</span>'+savedHtml(s)+'<button class="x">✕</button>';
     d.querySelector('.x').onclick=()=>{const r=starred.splice(i,1)[0];removeRemote(r);persistLocal();renderSlist();syncStarBtn();mount();};l.appendChild(d);});}
 
-document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key==='ArrowDown'&&deck==='jokes'){e.preventDefault();if(topCard){hideCurrent();flyDown(topCard);}}if(e.key==='Enter'&&topCard&&topCard.querySelector('.punch')){topCard.classList.toggle('revealed');}if(e.key===' '){e.preventDefault();toggleStar();}});
+document.getElementById('genBtn').onclick=genJoke;
+document.getElementById('themeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();genJoke();}});
+document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='themeInput')return;if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key==='ArrowDown'&&deck==='jokes'){e.preventDefault();if(topCard){hideCurrent();flyDown(topCard);}}if(e.key==='Enter'&&topCard&&topCard.querySelector('.punch')){topCard.classList.toggle('revealed');}if(e.key===' '){e.preventDefault();toggleStar();}});
 setDeck('teen');loadStars();loadHidden();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 </script>
