@@ -128,7 +128,10 @@ const PROFILE = localStorage.getItem('tt_profile') || (()=>{const id='dev-'+Math
 let sb=null,remote=false;
 try{ if(SB_URL.indexOf('YOUR')<0){ sb=supabase.createClient(SB_URL,SB_KEY); remote=true; } }catch(e){}
 const syncEl=document.getElementById('sync');
-function setSync(t,c){syncEl.textContent=t;syncEl.className='sync'+(c?' '+c:'');}
+let baseSync={t:'·',c:''},flashTimer=null;
+function renderSync(t,c){syncEl.textContent=t;syncEl.className='sync'+(c?' '+c:'');}
+function setSync(t,c){baseSync={t:t,c:c||''};clearTimeout(flashTimer);renderSync(t,c);}
+function flashSync(t,c){renderSync(t,c);clearTimeout(flashTimer);flashTimer=setTimeout(()=>renderSync(baseSync.t,baseSync.c),4500);}
 
 const DECKS={
  teen:{
@@ -251,7 +254,7 @@ function flyDown(el){el.style.transition='transform .26s ease-out, opacity .26s'
   setTimeout(advance,200);}
 function hideCurrent(){const it=order[idx];const key=deck+'|'+it.q;if(hidden.has(key))return;hidden.add(key);persistHidden();hideRemote(deck,it.cat,it.q);}
 function persistHidden(){localStorage.setItem('tt_hidden',JSON.stringify([...hidden]));}
-async function hideRemote(d,c,q){if(!remote)return;try{await sb.from('tabletalk_hidden').upsert({deck:d,cat:c,q:q},{onConflict:'deck,q'});setSync('hidden for all','ok');}catch(e){setSync('hidden here','err');}}
+async function hideRemote(d,c,q){if(!remote)return;try{await sb.from('tabletalk_hidden').upsert({deck:d,cat:c,q:q},{onConflict:'deck,q'});flashSync('hidden for all','ok');}catch(e){flashSync('hidden here','err');}}
 async function loadHidden(){try{hidden=new Set(JSON.parse(localStorage.getItem('tt_hidden')||'[]'));}catch(e){hidden=new Set();}
   if(remote){try{const {data,error}=await sb.from('tabletalk_hidden').select('deck,q');
     if(!error&&data){data.forEach(r=>hidden.add(r.deck+'|'+r.q));persistHidden();}}catch(e){}}
@@ -276,7 +279,7 @@ function renderChips(){const w=document.getElementById('chips');w.innerHTML='';C
 function toggleStar(){const it=order[idx];const i=starred.findIndex(s=>s.deck===deck&&s.q===it.q);if(i>=0){const r=starred.splice(i,1)[0];removeRemote(r);}else{const r={deck,cat:it.cat,q:it.q};starred.push(r);saveRemote(r);}persistLocal();mount();}
 function toggleStarSilent(){const it=order[idx];if(isStarred(it))return;const r={deck,cat:it.cat,q:it.q};starred.push(r);saveRemote(r);persistLocal();}
 function persistLocal(){localStorage.setItem('tt_starred',JSON.stringify(starred));}
-async function saveRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').upsert({profile:PROFILE,deck:r.deck,cat:r.cat,q:r.q},{onConflict:'profile,deck,q'});setSync('saved','ok');}catch(e){setSync('offline','err');}}
+async function saveRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').upsert({profile:PROFILE,deck:r.deck,cat:r.cat,q:r.q},{onConflict:'profile,deck,q'});flashSync('saved','ok');}catch(e){flashSync('offline','err');}}
 async function removeRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').delete().match({profile:PROFILE,deck:r.deck,q:r.q});}catch(e){}}
 async function loadStars(){const local=JSON.parse(localStorage.getItem('tt_starred')||'[]');starred=local;
   if(remote){try{const {data,error}=await sb.from('tabletalk_stars').select('deck,cat,q').eq('profile',PROFILE);
