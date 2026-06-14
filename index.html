@@ -274,12 +274,10 @@ async function genJoke(){if(genBusy||deck!=='jokes')return;const btn=document.ge
   try{const r=await fetch(FN_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},body:JSON.stringify({theme,category:cat})});
     const d=await r.json().catch(()=>({}));
     if(r.status===429){flashSync('daily limit reached','err');return;}
-    if(!r.ok||!Array.isArray(d.jokes)||!d.jokes.length)throw new Error(d.error||'failed');
-    const bucket=d.cat||(['dad','oneliners','limericks','xrated'].includes(cat)?cat:'oneliners');
-    if(!DECKS.jokes[bucket])DECKS.jokes[bucket]=[];
-    d.jokes.forEach(j=>DECKS.jokes[bucket].push(j));
-    order.splice(idx,0,...d.jokes.map(j=>({cat:bucket,q:j})));mount();
-    flashSync(d.jokes.length+' new jokes','ok');
+    if(!r.ok||!Array.isArray(d.items)||!d.items.length)throw new Error(d.error||'failed');
+    d.items.forEach(it=>{if(!DECKS.jokes[it.cat])DECKS.jokes[it.cat]=[];DECKS.jokes[it.cat].push(it.q);});
+    order.splice(idx,0,...d.items.map(it=>({cat:it.cat,q:it.q})));mount();
+    flashSync(d.items.length+' new jokes','ok');
   }catch(e){flashSync('joke failed','err');}
   finally{genBusy=false;if(btn){btn.disabled=false;btn.textContent='✨';}}}
 async function loadGenerated(){if(!remote)return;try{const {data,error}=await sb.from('tabletalk_jokes').select('cat,q');
