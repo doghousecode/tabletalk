@@ -272,11 +272,19 @@ let genBusy=false;
 async function genJoke(){if(genBusy||deck!=='jokes')return;const btn=document.getElementById('genBtn');const theme=(document.getElementById('themeInput').value||'').trim();
   genBusy=true;if(btn){btn.disabled=true;btn.textContent='⏳';}renderSync('writing…');
   try{const r=await fetch(FN_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},body:JSON.stringify({theme,category:cat})});
-    const d=await r.json().catch(()=>({}));if(!r.ok||!d.joke)throw new Error(d.error||'failed');
-    const genCat=['dad','oneliners','limericks','xrated'].includes(cat)?cat:'oneliners';
-    order.splice(idx,0,{cat:genCat,q:d.joke});mount();flashSync('fresh joke','ok');
+    const d=await r.json().catch(()=>({}));
+    if(r.status===429){flashSync('daily limit reached','err');return;}
+    if(!r.ok||!Array.isArray(d.jokes)||!d.jokes.length)throw new Error(d.error||'failed');
+    const bucket=d.cat||(['dad','oneliners','limericks','xrated'].includes(cat)?cat:'oneliners');
+    if(!DECKS.jokes[bucket])DECKS.jokes[bucket]=[];
+    d.jokes.forEach(j=>DECKS.jokes[bucket].push(j));
+    order.splice(idx,0,...d.jokes.map(j=>({cat:bucket,q:j})));mount();
+    flashSync(d.jokes.length+' new jokes','ok');
   }catch(e){flashSync('joke failed','err');}
   finally{genBusy=false;if(btn){btn.disabled=false;btn.textContent='✨';}}}
+async function loadGenerated(){if(!remote)return;try{const {data,error}=await sb.from('tabletalk_jokes').select('cat,q');
+  if(!error&&data&&data.length){data.forEach(r=>{if(!DECKS.jokes[r.cat])DECKS.jokes[r.cat]=[];DECKS.jokes[r.cat].push(r.q);});
+    if(deck==='jokes'){buildOrder();mount();}}}catch(e){}}
 
 function setDeck(d){deck=d;cat="all";
   const mb=document.getElementById('modeBtn');
@@ -308,7 +316,7 @@ function renderSlist(){const l=document.getElementById('slist');if(!starred.leng
 document.getElementById('genBtn').onclick=genJoke;
 document.getElementById('themeInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();genJoke();}});
 document.addEventListener('keydown',e=>{if(e.target&&e.target.id==='themeInput')return;if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key==='ArrowDown'&&deck==='jokes'){e.preventDefault();if(topCard){hideCurrent();flyDown(topCard);}}if(e.key==='Enter'&&topCard&&topCard.querySelector('.punch')){topCard.classList.toggle('revealed');}if(e.key===' '){e.preventDefault();toggleStar();}});
-setDeck('teen');loadStars();loadHidden();
+setDeck('teen');loadStars();loadHidden();loadGenerated();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 </script>
 </body>
