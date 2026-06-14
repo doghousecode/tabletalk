@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>TableTalk</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0e1117">
+<meta name="apple-mobile-web-app-title" content="TableTalk">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <style>
@@ -169,7 +172,7 @@ const CATS={teen:[["all","All"],["fun","Fun"],["deep","Deep"],["wyr","Would You 
 const CATLABEL={fun:"Fun",deep:"Deep",wyr:"Would You Rather",family:"Family",playful:"Playful",memories:"Memories",future:"Future",craft:"Craft",people:"People",culture:"Culture",vision:"Vision",mindset:"Mindset",discipline:"Discipline",leadership:"Leadership",everyday:"Everyday",describe:"Describe",feelings:"Feelings",teens:"Teens",dad:"Dad Jokes",oneliners:"One-Liners",limericks:"Limericks",xrated:"X-Rated"};
 
 const DECKORDER=["teen","couple","jobs","mantra","vocab","jokes"];
-const DECKNAME={teen:"Taco Tinks",couple:"Mr & Mrs",jobs:"Steve Jobs",mantra:"Mantras",vocab:"Wordsmith",jokes:"Shits&Gigs"};
+const DECKNAME={teen:"Taco Tinks",couple:"Mr & Mrs",jobs:"Steve Jobs",mantra:"Mantras",vocab:"Wordsmith",jokes:"Shits & Gigs"};
 let deck="teen",cat="all",order=[],idx=0,starred=[],hidden=new Set();
 const isStarred=it=>starred.some(s=>s.deck===deck&&s.q===it.q);
 function buildOrder(){const g=DECKS[deck];let pool=[];for(const c in g){if(cat==="all"||cat===c)g[c].forEach(q=>{if(!hidden.has(deck+'|'+q))pool.push({cat:c,q});});}for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}order=pool;idx=0;}
@@ -290,6 +293,7 @@ function renderSlist(){const l=document.getElementById('slist');if(!starred.leng
 
 document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key==='ArrowDown'&&deck==='jokes'){e.preventDefault();if(topCard){hideCurrent();flyDown(topCard);}}if(e.key==='Enter'&&topCard&&topCard.querySelector('.punch')){topCard.classList.toggle('revealed');}if(e.key===' '){e.preventDefault();toggleStar();}});
 setDeck('teen');loadStars();loadHidden();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 </script>
 </body>
 </html>
