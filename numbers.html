@@ -35,6 +35,14 @@
 
 <div class="grid" id="stats"></div>
 
+<h2>Card coverage</h2>
+<div class="sub" id="coverageSub"></div>
+<div id="coverage"><div class="muted">…</div></div>
+
+<h2>By household</h2>
+<div class="sub">Each device that's opened the app gets one random local ID — no personal data, not linked across devices.</div>
+<div id="households"><div class="muted">…</div></div>
+
 <h2>Decks opened</h2>
 <div id="decks"><div class="muted">…</div></div>
 
@@ -87,9 +95,29 @@ function barTable(rows){
 }
 function tally(list,key){const m={};list.forEach(x=>{const k=key(x)||'—';m[k]=(m[k]||0)+1;});
   return Object.entries(m).map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n);}
+function coverageTable(items){
+  if(!items.length)return '<div class="muted">No data yet.</div>';
+  return '<table><tbody>'+items.map(r=>{const pct=r.total?Math.round(r.seen/r.total*100):0;
+    return '<tr><td style="width:35%">'+r.k+'</td><td><div class="bar" style="width:'+pct+'%"></div></td>'+
+      '<td class="r" style="width:120px">'+r.seen+' / '+r.total+' · '+pct+'%</td></tr>';}).join('')+'</tbody></table>';
+}
 
 const DECKNAMES={teen:'Taco Tinks',couple:'Mr & Mrs',jobs:'Steve Jobs',mantra:'Mantras',vocab:'Wordsmith',jokes:'Giggles'};
+const DECK_ORDER=['teen','vocab','jokes','couple','jobs','mantra'];
 const nice=d=>DECKNAMES[d]||d;
+
+async function getDeckTotals(){
+  try{
+    const res=await fetch('./index.html',{cache:'no-store'});
+    const html=await res.text();
+    const s=html.indexOf('const DECKS=')+'const DECKS='.length;
+    const e=html.indexOf('const CATS=');
+    const DECKS=eval('('+html.slice(s,e).trim().replace(/;$/,'')+')');
+    const totals={};
+    for(const d in DECKS){let t=0;for(const c in DECKS[d])t+=DECKS[d][c].length;totals[d]=t;}
+    return totals;
+  }catch(e){return null;}
+}
 
 (async function(){
   try{
@@ -113,6 +141,39 @@ const nice=d=>DECKNAMES[d]||d;
     document.getElementById('decks').innerHTML=barTable(tally(deckEv,x=>nice(x.meta&&x.meta.deck)));
     document.getElementById('saves').innerHTML=barTable(tally(saveEv,x=>nice(x.meta&&x.meta.deck)));
 
+    const [totals,viewEv]=await Promise.all([
+      getDeckTotals(),
+      rows('tabletalk_events','select=meta&name=eq.view&order=created_at.desc&limit=20000'),
+    ]);
+    if(totals){
+      const globalSeen={},byDevice={};
+      DECK_ORDER.forEach(d=>globalSeen[d]=new Set());
+      viewEv.forEach(ev=>{const m=ev.meta||{};if(!m.deck||!m.id||!globalSeen[m.deck])return;
+        globalSeen[m.deck].add(m.id);
+        const uid=m.uid||'unknown';
+        if(!byDevice[uid])byDevice[uid]={};
+        if(!byDevice[uid][m.deck])byDevice[uid][m.deck]=new Set();
+        byDevice[uid][m.deck].add(m.id);});
+
+      let grandTotal=0,grandSeen=0;
+      DECK_ORDER.forEach(d=>{grandTotal+=totals[d]||0;grandSeen+=Math.min(globalSeen[d].size,totals[d]||0);});
+      document.getElementById('coverage').innerHTML=coverageTable(DECK_ORDER.filter(d=>totals[d]).map(d=>({k:nice(d),seen:globalSeen[d].size,total:totals[d]})));
+      document.getElementById('coverageSub').textContent=grandTotal?(grandSeen+' of '+grandTotal+' cards seen by someone, at least once ('+Math.round(grandSeen/grandTotal*100)+'%)'):'';
+
+      const deviceRows=Object.entries(byDevice).map(([uid,decks])=>{
+        let seen=0,top=null,topPct=-1;
+        DECK_ORDER.forEach(d=>{const s=decks[d]?decks[d].size:0;seen+=s;
+          if(totals[d]){const p=s/totals[d];if(p>topPct){topPct=p;top=d;}}});
+        return{uid,seen,pct:grandTotal?Math.round(seen/grandTotal*100):0,top:top?nice(top):'—',topPct:Math.max(0,Math.round(topPct*100))};
+      }).sort((a,b)=>b.pct-a.pct);
+      document.getElementById('households').innerHTML=deviceRows.length?
+        '<table><thead><tr><th>Device</th><th class="r">Overall</th><th>Closest to done</th></tr></thead><tbody>'+
+        deviceRows.map(r=>'<tr><td class="muted">'+r.uid.slice(0,8)+'</td><td class="r">'+r.pct+'%</td><td class="muted">'+r.top+' · '+r.topPct+'%</td></tr>').join('')+
+        '</tbody></table>':'<div class="muted">No data yet.</div>';
+    }else{
+      document.getElementById('coverage').innerHTML='<div class="muted">Could not load card totals from index.html.</div>';
+    }
+
     const dev=await rows('tabletalk_visits','select=device,browser,os,lang,screen&order=created_at.desc&limit=5000');
     document.getElementById('devices').innerHTML=barTable(tally(dev,x=>x.device));
     document.getElementById('browsers').innerHTML=barTable(tally(dev,x=>x.browser));
@@ -126,7 +187,7 @@ const nice=d=>DECKNAMES[d]||d;
 
     document.getElementById('updated').textContent='Updated '+new Date().toLocaleString();
   }catch(e){
-    document.getElementById('err').textContent='Could not load stats: '+(e&&e.message||e)+' — make sure the tabletalk_visits and tabletalk_events tables exist with public read policies.';
+    document.getElementById('err').textContent='Could not load stats: '+(e&&e.message||e)+' — make sure the tabletalk_visits and tabletalk_events tables (with a jsonb meta column) exist with public read policies.';
   }
 })();
 </script>
