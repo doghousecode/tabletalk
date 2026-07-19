@@ -127,6 +127,8 @@ function flashSync(t,c){renderSync(t,c);clearTimeout(flashTimer);flashTimer=setT
 /* ---- anonymous usage analytics (visits + interactions only; no personal data) ---- */
 const AN_URL="https://xybnrpguguxgqulhbswd.supabase.co";
 const AN_KEY="sb_publishable_IaeNKz4qCG4RhFlHj8lZgg_61Wk9pIo";
+/* random per-device id, local only — lets /numbers show coverage per household without any personal data */
+const DEVID=localStorage.getItem('tt_devid')||(()=>{const id='d'+Math.random().toString(36).slice(2,10);localStorage.setItem('tt_devid',id);return id;})();
 function track(table,row){try{if(!navigator.onLine)return;fetch(AN_URL+'/rest/v1/'+table,{method:'POST',keepalive:true,headers:{apikey:AN_KEY,Authorization:'Bearer '+AN_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(row)}).catch(()=>{});}catch(e){}}
 function parseUA(ua){
   let browser='Other';
@@ -147,6 +149,7 @@ function trackVisit(){const ua=navigator.userAgent,p=parseUA(ua);
     browser:p.browser,os:p.os,lang:(navigator.language||'').slice(0,10),
     screen:(screen.width&&screen.height)?(screen.width+'x'+screen.height):null});}
 function trackEvent(name,meta){track('tabletalk_events',{name:name,meta:meta||null});}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return(h>>>0).toString(36);}
 
 const DECKS={
  teen:{
@@ -215,7 +218,8 @@ function mount(){stage.querySelectorAll('.card').forEach(c=>c.remove());
   const cur=order[idx],nxt=order[(idx+1)%order.length];
   underCard=makeCard(nxt);underCard.style.transform='scale(.96) translateY(10px)';underCard.style.opacity='.85';
   topCard=makeCard(cur);stage.appendChild(underCard);stage.appendChild(topCard);attach(topCard);
-  document.getElementById('counter').textContent=(idx+1)+' / '+order.length;syncStarBtn();}
+  document.getElementById('counter').textContent=(idx+1)+' / '+order.length;syncStarBtn();
+  trackEvent('view',{deck:deck,cat:cur.cat,id:hashStr(deck+'|'+cur.cat+'|'+cur.q),uid:DEVID});}
 function syncStarBtn(){document.getElementById('starBtn').textContent=isStarred(order[idx])?'★':'☆';document.getElementById('starCount').textContent=starred.length;}
 
 function snapBack(el){el.style.transition='transform .22s cubic-bezier(.2,.8,.3,1)';el.style.transform='';
