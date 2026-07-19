@@ -128,7 +128,24 @@ function flashSync(t,c){renderSync(t,c);clearTimeout(flashTimer);flashTimer=setT
 const AN_URL="https://xybnrpguguxgqulhbswd.supabase.co";
 const AN_KEY="sb_publishable_IaeNKz4qCG4RhFlHj8lZgg_61Wk9pIo";
 function track(table,row){try{if(!navigator.onLine)return;fetch(AN_URL+'/rest/v1/'+table,{method:'POST',keepalive:true,headers:{apikey:AN_KEY,Authorization:'Bearer '+AN_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(row)}).catch(()=>{});}catch(e){}}
-function trackVisit(){track('tabletalk_visits',{path:location.pathname||'/',ref:document.referrer||null,device:(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop')});}
+function parseUA(ua){
+  let browser='Other';
+  if(/Edg\//.test(ua))browser='Edge';else if(/OPR\//.test(ua))browser='Opera';
+  else if(/Chrome\//.test(ua)&&!/Chromium/.test(ua))browser='Chrome';
+  else if(/CriOS/.test(ua))browser='Chrome';else if(/FxiOS/.test(ua))browser='Firefox';
+  else if(/Firefox\//.test(ua))browser='Firefox';
+  else if(/Safari\//.test(ua)&&/Version\//.test(ua))browser='Safari';
+  let os='Other';
+  if(/iPhone|iPad|iPod/.test(ua))os='iOS';else if(/Android/.test(ua))os='Android';
+  else if(/Mac OS X/.test(ua))os='macOS';else if(/Windows/.test(ua))os='Windows';
+  else if(/Linux/.test(ua))os='Linux';
+  return{browser,os};
+}
+function trackVisit(){const ua=navigator.userAgent,p=parseUA(ua);
+  track('tabletalk_visits',{path:location.pathname||'/',ref:document.referrer||null,
+    device:(/Mobi|Android|iPhone|iPad/i.test(ua)?'mobile':'desktop'),
+    browser:p.browser,os:p.os,lang:(navigator.language||'').slice(0,10),
+    screen:(screen.width&&screen.height)?(screen.width+'x'+screen.height):null});}
 function trackEvent(name,meta){track('tabletalk_events',{name:name,meta:meta||null});}
 
 const DECKS={

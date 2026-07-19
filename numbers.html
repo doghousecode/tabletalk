@@ -44,6 +44,18 @@
 <h2>Devices</h2>
 <div id="devices"><div class="muted">…</div></div>
 
+<h2>Browsers</h2>
+<div id="browsers"><div class="muted">…</div></div>
+
+<h2>OS</h2>
+<div id="oses"><div class="muted">…</div></div>
+
+<h2>Languages</h2>
+<div id="langs"><div class="muted">…</div></div>
+
+<h2>Screen sizes</h2>
+<div id="screens"><div class="muted">…</div></div>
+
 <h2>Recent visits</h2>
 <div id="recent"><div class="muted">…</div></div>
 
@@ -95,17 +107,21 @@ const nice=d=>DECKNAMES[d]||d;
     const [deckEv,saveEv,visitRows]=await Promise.all([
       rows('tabletalk_events','select=meta&name=eq.deck&order=created_at.desc&limit=5000'),
       rows('tabletalk_events','select=meta&name=eq.save&order=created_at.desc&limit=5000'),
-      rows('tabletalk_visits','select=device,path,created_at&order=created_at.desc&limit=30'),
+      rows('tabletalk_visits','select=device,browser,os,lang,screen,path,created_at&order=created_at.desc&limit=30'),
     ]);
 
     document.getElementById('decks').innerHTML=barTable(tally(deckEv,x=>nice(x.meta&&x.meta.deck)));
     document.getElementById('saves').innerHTML=barTable(tally(saveEv,x=>nice(x.meta&&x.meta.deck)));
 
-    const dev=await rows('tabletalk_visits','select=device&order=created_at.desc&limit=5000');
+    const dev=await rows('tabletalk_visits','select=device,browser,os,lang,screen&order=created_at.desc&limit=5000');
     document.getElementById('devices').innerHTML=barTable(tally(dev,x=>x.device));
+    document.getElementById('browsers').innerHTML=barTable(tally(dev,x=>x.browser));
+    document.getElementById('oses').innerHTML=barTable(tally(dev,x=>x.os));
+    document.getElementById('langs').innerHTML=barTable(tally(dev,x=>x.lang));
+    document.getElementById('screens').innerHTML=barTable(tally(dev,x=>x.screen));
 
-    document.getElementById('recent').innerHTML='<table><thead><tr><th>When</th><th>Device</th><th>Path</th></tr></thead><tbody>'+
-      visitRows.map(v=>'<tr><td>'+new Date(v.created_at).toLocaleString()+'</td><td>'+(v.device||'—')+'</td><td class="muted">'+(v.path||'/')+'</td></tr>').join('')+
+    document.getElementById('recent').innerHTML='<table><thead><tr><th>When</th><th>Device</th><th>Browser</th><th>Path</th></tr></thead><tbody>'+
+      visitRows.map(v=>'<tr><td>'+new Date(v.created_at).toLocaleString()+'</td><td>'+(v.device||'—')+'</td><td class="muted">'+([v.browser,v.os].filter(Boolean).join(' · ')||'—')+'</td><td class="muted">'+(v.path||'/')+'</td></tr>').join('')+
       '</tbody></table>';
 
     document.getElementById('updated').textContent='Updated '+new Date().toLocaleString();
