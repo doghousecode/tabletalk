@@ -113,14 +113,7 @@
   <h2>Saved questions <button class="close" onclick="closeSheet()">✕</button></h2>
   <div class="slist" id="slist"></div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ===== SUPABASE CONFIG — fill these two in ===== */
-const SB_URL = "https://dycnheibkjjqlmthkkyk.supabase.co";
-const SB_KEY = "sb_publishable_cVz9GemYtiI5sYtt9jzniQ_1UAEkWcn";
-const PROFILE = localStorage.getItem('tt_profile') || (()=>{const id='dev-'+Math.random().toString(36).slice(2,9);localStorage.setItem('tt_profile',id);return id;})();
-let sb=null,remote=false;
-try{ if(SB_URL.indexOf('YOUR')<0){ sb=supabase.createClient(SB_URL,SB_KEY); remote=true; } }catch(e){}
 const syncEl=document.getElementById('sync');
 let baseSync={t:'·',c:''},flashTimer=null;
 function renderSync(t,c){syncEl.textContent=t;syncEl.className='sync'+(c?' '+c:'');}
@@ -168,7 +161,7 @@ const CATS={teen:[["all","All"],["fun","Fun"],["deep","Deep"],["wyr","Would You 
 const CATLABEL={fun:"Fun",deep:"Deep",wyr:"Would You Rather",family:"Family",playful:"Playful",memories:"Memories",future:"Future",craft:"Craft",people:"People",culture:"Culture",vision:"Vision",mindset:"Mindset",discipline:"Discipline",leadership:"Leadership",everyday:"Everyday",describe:"Describe",feelings:"Feelings",teens:"Teens",dad:"Dad Jokes",oneliners:"One-Liners",limericks:"Limericks"};
 
 const DECKORDER=["teen","vocab","couple","jobs","mantra","jokes"];
-const DECKNAME={teen:"Taco Tinks",couple:"Mr & Mrs",jobs:"Steve Jobs",mantra:"Mantras",vocab:"Wordsmith",jokes:"Shits & Gigs"};
+const DECKNAME={teen:"Taco Tinks",couple:"Mr & Mrs",jobs:"Steve Jobs",mantra:"Mantras",vocab:"Wordsmith",jokes:"Giggles"};
 let deck="teen",cat="all",order=[],idx=0,starred=[],hidden=new Set();
 const isStarred=it=>starred.some(s=>s.deck===deck&&s.q===it.q);
 function buildOrder(){const g=DECKS[deck];let pool=[];for(const c in g){if(cat==="all"||cat===c)g[c].forEach(q=>{if(!hidden.has(deck+'|'+q))pool.push({cat:c,q});});}for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}order=pool;idx=0;}
@@ -245,13 +238,9 @@ function flyUp(el){el.style.transition='transform .26s ease-out, opacity .26s';e
 function flyDown(el){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateY('+(window.innerHeight*1.1)+'px) rotate(4deg)';el.style.opacity='0';
   if(underCard){underCard.style.transition='.26s';underCard.style.transform='scale(1)';underCard.style.opacity='1';}
   setTimeout(advance,200);}
-function hideCurrent(){const it=order[idx];const key=deck+'|'+it.q;if(hidden.has(key))return;hidden.add(key);persistHidden();hideRemote(deck,it.cat,it.q);}
+function hideCurrent(){const it=order[idx];const key=deck+'|'+it.q;if(hidden.has(key))return;hidden.add(key);persistHidden();flashSync('hidden','ok');}
 function persistHidden(){localStorage.setItem('tt_hidden',JSON.stringify([...hidden]));}
-async function hideRemote(d,c,q){if(!remote)return;try{await sb.from('tabletalk_hidden').upsert({deck:d,cat:c,q:q},{onConflict:'deck,q'});flashSync('hidden for all','ok');}catch(e){flashSync('hidden here','err');}}
-async function loadHidden(){try{hidden=new Set(JSON.parse(localStorage.getItem('tt_hidden')||'[]'));}catch(e){hidden=new Set();}
-  if(remote){try{const {data,error}=await sb.from('tabletalk_hidden').select('deck,q');
-    if(!error&&data){data.forEach(r=>hidden.add(r.deck+'|'+r.q));persistHidden();}}catch(e){}}
-  if([...hidden].some(k=>k.slice(0,k.indexOf('|'))===deck)){buildOrder();mount();}}
+function loadHidden(){try{hidden=new Set(JSON.parse(localStorage.getItem('tt_hidden')||'[]'));}catch(e){hidden=new Set();}}
 function goPrev(){const W=stage.clientWidth,pc=makeCard(order[(idx-1+order.length)%order.length]);
   pc.style.transition='none';pc.style.transform='translateX('+(-W)+'px)';pc.style.opacity='0';pc.style.zIndex='5';stage.appendChild(pc);
   requestAnimationFrame(()=>{pc.style.transition='transform .3s cubic-bezier(.2,.8,.3,1), opacity .25s';pc.style.transform='translateX(0px)';pc.style.opacity='1';});
@@ -268,23 +257,18 @@ function setDeck(d){deck=d;cat="all";
 function flipDeck(){setDeck(DECKORDER[(DECKORDER.indexOf(deck)+1)%DECKORDER.length]);}
 function renderChips(){const w=document.getElementById('chips');w.innerHTML='';CATS[deck].forEach(([k,l])=>{const b=document.createElement('button');b.className='chip'+(cat===k?' on':'');b.textContent=l;b.onclick=()=>{cat=k;renderChips();buildOrder();mount();};w.appendChild(b);});}
 
-function toggleStar(){const it=order[idx];const i=starred.findIndex(s=>s.deck===deck&&s.q===it.q);if(i>=0){const r=starred.splice(i,1)[0];removeRemote(r);}else{const r={deck,cat:it.cat,q:it.q};starred.push(r);saveRemote(r);}persistLocal();mount();}
-function toggleStarSilent(){const it=order[idx];if(isStarred(it))return;const r={deck,cat:it.cat,q:it.q};starred.push(r);saveRemote(r);persistLocal();}
+function toggleStar(){const it=order[idx];const i=starred.findIndex(s=>s.deck===deck&&s.q===it.q);if(i>=0){starred.splice(i,1);flashSync('removed');}else{starred.push({deck,cat:it.cat,q:it.q});flashSync('saved','ok');}persistLocal();mount();}
+function toggleStarSilent(){const it=order[idx];if(isStarred(it))return;starred.push({deck,cat:it.cat,q:it.q});persistLocal();flashSync('saved','ok');}
 function persistLocal(){localStorage.setItem('tt_starred',JSON.stringify(starred));}
-async function saveRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').upsert({profile:PROFILE,deck:r.deck,cat:r.cat,q:r.q},{onConflict:'profile,deck,q'});flashSync('saved','ok');}catch(e){flashSync('offline','err');}}
-async function removeRemote(r){if(!remote)return;try{await sb.from('tabletalk_stars').delete().match({profile:PROFILE,deck:r.deck,q:r.q});}catch(e){}}
-async function loadStars(){const local=JSON.parse(localStorage.getItem('tt_starred')||'[]');starred=local;
-  if(remote){try{const {data,error}=await sb.from('tabletalk_stars').select('deck,cat,q').eq('profile',PROFILE);
-    if(!error&&data){const seen=new Set();starred=[];data.forEach(r=>{const k=r.deck+'|'+r.q;if(!seen.has(k)){seen.add(k);starred.push(r);}});persistLocal();setSync('synced','ok');}}catch(e){setSync('offline','err');}}else setSync('local only');
-  syncStarBtn();}
+function loadStars(){try{starred=JSON.parse(localStorage.getItem('tt_starred')||'[]');}catch(e){starred=[];}syncStarBtn();}
 
 const sheet=document.getElementById('sheet');
 document.getElementById('starredBtn').onclick=()=>{renderSlist();sheet.classList.add('open');};
 function closeSheet(){sheet.classList.remove('open');}
-function renderSlist(){const l=document.getElementById('slist');if(!starred.length){l.innerHTML='<div class="empty">No saved questions yet.<br>Swipe a card left, or tap the star, to keep it here for later.</div>';return;}
+function renderSlist(){const l=document.getElementById('slist');if(!starred.length){l.innerHTML='<div class="empty">No saved cards yet.<br>Swipe a card up, or tap the star, to keep it here for later.</div>';return;}
   l.innerHTML='';starred.forEach((s,i)=>{const d=document.createElement('div');d.className='sitem';
     d.innerHTML='<span class="tag">'+(DECKNAME[s.deck]||s.deck)+' · '+(CATLABEL[s.cat]||s.cat)+'</span>'+savedHtml(s)+'<button class="x">✕</button>';
-    d.querySelector('.x').onclick=()=>{const r=starred.splice(i,1)[0];removeRemote(r);persistLocal();renderSlist();syncStarBtn();mount();};l.appendChild(d);});}
+    d.querySelector('.x').onclick=()=>{starred.splice(i,1);persistLocal();renderSlist();syncStarBtn();mount();};l.appendChild(d);});}
 
 document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key==='ArrowDown'&&deck==='jokes'){e.preventDefault();if(topCard){hideCurrent();flyDown(topCard);}}if(e.key==='Enter'&&topCard&&topCard.querySelector('.punch')){topCard.classList.toggle('revealed');}if(e.key===' '){e.preventDefault();toggleStar();}});
 setDeck('teen');loadStars();loadHidden();
