@@ -167,7 +167,7 @@ const DECKS={
 const CATS={teen:[["all","All"],["fun","Fun"],["deep","Deep"],["wyr","Would You Rather"],["family","Family"]],couple:[["all","All"],["playful","Playful"],["deep","Deep"],["memories","Memories"],["future","Future"]],jobs:[["all","All"],["craft","Craft"],["people","People"],["culture","Culture"],["vision","Vision"]],mantra:[["all","All"],["mindset","Mindset"],["discipline","Discipline"],["leadership","Leadership"],["family","Family"]],vocab:[["all","All"],["everyday","Everyday"],["describe","Describe"],["feelings","Feelings"],["teens","Teens"]],jokes:[["all","All"],["dad","Dad Jokes"],["oneliners","One-Liners"],["limericks","Limericks"]]};
 const CATLABEL={fun:"Fun",deep:"Deep",wyr:"Would You Rather",family:"Family",playful:"Playful",memories:"Memories",future:"Future",craft:"Craft",people:"People",culture:"Culture",vision:"Vision",mindset:"Mindset",discipline:"Discipline",leadership:"Leadership",everyday:"Everyday",describe:"Describe",feelings:"Feelings",teens:"Teens",dad:"Dad Jokes",oneliners:"One-Liners",limericks:"Limericks"};
 
-const DECKORDER=["teen","vocab","couple","jobs","mantra","jokes"];
+const DECKORDER=["teen","vocab","jokes","couple","jobs","mantra"];
 const DECKNAME={teen:"Taco Tinks",couple:"Mr & Mrs",jobs:"Steve Jobs",mantra:"Mantras",vocab:"Wordsmith",jokes:"Giggles"};
 let deck="teen",cat="all",order=[],idx=0,starred=[],hidden=new Set();
 const isStarred=it=>starred.some(s=>s.deck===deck&&s.q===it.q);
