@@ -120,6 +120,13 @@ function renderSync(t,c){syncEl.textContent=t;syncEl.className='sync'+(c?' '+c:'
 function setSync(t,c){baseSync={t:t,c:c||''};clearTimeout(flashTimer);renderSync(t,c);}
 function flashSync(t,c){renderSync(t,c);clearTimeout(flashTimer);flashTimer=setTimeout(()=>renderSync(baseSync.t,baseSync.c),4500);}
 
+/* ---- anonymous usage analytics (visits + interactions only; no personal data) ---- */
+const AN_URL="https://dycnheibkjjqlmthkkyk.supabase.co";
+const AN_KEY="sb_publishable_cVz9GemYtiI5sYtt9jzniQ_1UAEkWcn";
+function track(table,row){try{if(!navigator.onLine)return;fetch(AN_URL+'/rest/v1/'+table,{method:'POST',keepalive:true,headers:{apikey:AN_KEY,Authorization:'Bearer '+AN_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(row)}).catch(()=>{});}catch(e){}}
+function trackVisit(){track('page_visits',{path:location.pathname||'/',ref:document.referrer||null,device:(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop')});}
+function trackEvent(name,meta){track('tabletalk_events',{name:name,meta:meta||null});}
+
 const DECKS={
  teen:{
   fun:["If you could instantly master any skill, what would it be and why?","What's the most ridiculous thing you've ever convinced someone was true?","If our family had a reality TV show, what would it be called?","What's a small thing that makes you weirdly happy?","If you could swap lives with anyone for 24 hours, who and why?","What's the best meme or video you've seen recently?","If you had unlimited money for one weekend, what would you do?","What three things would you grab if the house was on fire (everyone's already safe)?","If you could rename yourself, what name would you pick?","What's the strangest food combo you secretly love?","If animals could talk, which would be the rudest?","What's a trend right now that you think is genuinely dumb?","If you could have any animal as a pet, no limits, what would it be?","What's the most useless talent you have?","If you could only eat one cuisine for life, what's it gonna be?","What would your superhero name and power be?","What's the funniest thing that's happened to you at school?","If you could time travel, forward or back, and where to?","What's a game you could play forever and never get bored of?","If you ran the world for a day, what's your first rule?","If you could turn any food into a drink, what would you sip all day?","What is the weirdest dream you can actually remember?","If you had a robot to do one chore forever, which chore gets the boot?","What is the most embarrassing song on your playlist right now?","If you could make one school subject disappear, which one and why?","What would you do first if you woke up as a giant?","If you could give everyone in the family a silly nickname, what would they be?","What is the strangest thing you have ever searched online?","If our pets started a band, what would they be called?","What is the best prank you have ever pulled or seen?","If you could only talk in emojis for a day, which three would you need most?","What random object would you want to be life-sized as a bouncy castle?","If you could be a contestant on any game show, which one?","What is the most ridiculous fashion trend you would actually try?","If you could swap voices with anyone for a day, who?","What food would you ban from the planet if you could?","If you found a magic lamp but only got half a wish, what would you ask for?","What is the silliest reason you have ever laughed until you cried?","If you could invent a new flavour of ice cream, what is in it?","What would your theme song be when you walk into a room?","If you could have any fictional vehicle, which one?","What is the weirdest talent you wish you had?","If animals had jobs, what job would a cat be terrible at?","What is the most chaotic thing that has happened on a family trip?","If you could make it rain any object, what would you choose?","What would you name a pet dragon?","If you had to wear one Halloween costume every day for a year, what is it?","What is the funniest word you can think of?","If you could teleport to one fast food place right now, where?","What is the most useless fact you know?","If you could turn invisible for one hour, what is the first thing you would do?","What would be the worst superpower to have?","If you could trade places with one YouTuber or streamer, who?","What is the strangest thing you have ever eaten?","If you could add one new holiday to the year, what do we celebrate?","What would your dream treehouse have inside it?","If you could only watch one film for the rest of your life, what is it?","What is the most outrageous lie you got away with as a little kid?","If you could make any animal the size of a dog, which would you pick?","What would you do with a year off school and unlimited snacks?","If you had your own talk show, who is your first guest?","What is the goofiest thing you do when no one is watching?","If you could rename the days of the week, what would Monday become?","What is the best costume you have ever worn?","If you could control one thing with your mind, what would it be?","What is the weirdest food combination you would dare someone to eat?","If you could shrink to the size of an ant for a day, where would you explore?","What is the silliest argument you have ever had with a friend?","If you could have dinner with any cartoon character, who?","What would your superhero sidekick be like?","If you could make one rule everyone on Earth had to follow, what is it?","What is the most fun you have ever had on a rainy day?","If you could turn into any animal whenever you wanted, which one?","What is the best thing about being the age you are right now?","If you had to eat breakfast food or dinner food forever, which wins?","What would you put in a time capsule to open in 20 years?","If you could give your future self advice in three words, what would they be?","What is the weirdest thing you find genuinely satisfying to watch?","If you could swap our house for any building in the world, what would you pick?","What is the funniest thing a grown-up has ever said by accident?"],
@@ -238,7 +245,7 @@ function flyUp(el){el.style.transition='transform .26s ease-out, opacity .26s';e
 function flyDown(el){el.style.transition='transform .26s ease-out, opacity .26s';el.style.transform='translateY('+(window.innerHeight*1.1)+'px) rotate(4deg)';el.style.opacity='0';
   if(underCard){underCard.style.transition='.26s';underCard.style.transform='scale(1)';underCard.style.opacity='1';}
   setTimeout(advance,200);}
-function hideCurrent(){const it=order[idx];const key=deck+'|'+it.q;if(hidden.has(key))return;hidden.add(key);persistHidden();flashSync('hidden','ok');}
+function hideCurrent(){const it=order[idx];const key=deck+'|'+it.q;if(hidden.has(key))return;hidden.add(key);persistHidden();flashSync('hidden','ok');trackEvent('hide',{deck:deck,cat:it.cat});}
 function persistHidden(){localStorage.setItem('tt_hidden',JSON.stringify([...hidden]));}
 function loadHidden(){try{hidden=new Set(JSON.parse(localStorage.getItem('tt_hidden')||'[]'));}catch(e){hidden=new Set();}}
 function goPrev(){const W=stage.clientWidth,pc=makeCard(order[(idx-1+order.length)%order.length]);
@@ -247,18 +254,18 @@ function goPrev(){const W=stage.clientWidth,pc=makeCard(order[(idx-1+order.lengt
   setTimeout(()=>{idx=(idx-1+order.length)%order.length;mount();},280);}
 function btnNext(){if(topCard)flyNext(topCard,-1);}
 function btnPrev(){goPrev();}
-function shuffleDeck(){buildOrder();mount();}
+function shuffleDeck(){buildOrder();mount();trackEvent('shuffle',{deck:deck});}
 
 function setDeck(d){deck=d;cat="all";
   const mb=document.getElementById('modeBtn');
   mb.textContent=DECKNAME[d]+' ⇄';
   mb.className='modebtn'+(d==='couple'?' couple':d==='jobs'?' jobs':d==='mantra'?' mantra':d==='vocab'?' vocab':d==='jokes'?' jokes':'');
-  renderChips();buildOrder();mount();}
+  renderChips();buildOrder();mount();trackEvent('deck',{deck:d});}
 function flipDeck(){setDeck(DECKORDER[(DECKORDER.indexOf(deck)+1)%DECKORDER.length]);}
 function renderChips(){const w=document.getElementById('chips');w.innerHTML='';CATS[deck].forEach(([k,l])=>{const b=document.createElement('button');b.className='chip'+(cat===k?' on':'');b.textContent=l;b.onclick=()=>{cat=k;renderChips();buildOrder();mount();};w.appendChild(b);});}
 
-function toggleStar(){const it=order[idx];const i=starred.findIndex(s=>s.deck===deck&&s.q===it.q);if(i>=0){starred.splice(i,1);flashSync('removed');}else{starred.push({deck,cat:it.cat,q:it.q});flashSync('saved','ok');}persistLocal();mount();}
-function toggleStarSilent(){const it=order[idx];if(isStarred(it))return;starred.push({deck,cat:it.cat,q:it.q});persistLocal();flashSync('saved','ok');}
+function toggleStar(){const it=order[idx];const i=starred.findIndex(s=>s.deck===deck&&s.q===it.q);if(i>=0){starred.splice(i,1);flashSync('removed');}else{starred.push({deck,cat:it.cat,q:it.q});flashSync('saved','ok');trackEvent('save',{deck,cat:it.cat});}persistLocal();mount();}
+function toggleStarSilent(){const it=order[idx];if(isStarred(it))return;starred.push({deck,cat:it.cat,q:it.q});persistLocal();flashSync('saved','ok');trackEvent('save',{deck,cat:it.cat});}
 function persistLocal(){localStorage.setItem('tt_starred',JSON.stringify(starred));}
 function loadStars(){try{starred=JSON.parse(localStorage.getItem('tt_starred')||'[]');}catch(e){starred=[];}syncStarBtn();}
 
@@ -271,7 +278,7 @@ function renderSlist(){const l=document.getElementById('slist');if(!starred.leng
     d.querySelector('.x').onclick=()=>{starred.splice(i,1);persistLocal();renderSlist();syncStarBtn();mount();};l.appendChild(d);});}
 
 document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')btnNext();if(e.key==='ArrowRight')btnPrev();if(e.key==='ArrowUp'){e.preventDefault();if(topCard){if(!isStarred(order[idx]))toggleStarSilent();flyUp(topCard);}}if(e.key==='ArrowDown'&&deck==='jokes'){e.preventDefault();if(topCard){hideCurrent();flyDown(topCard);}}if(e.key==='Enter'&&topCard&&topCard.querySelector('.punch')){topCard.classList.toggle('revealed');}if(e.key===' '){e.preventDefault();toggleStar();}});
-setDeck('teen');loadStars();loadHidden();
+setDeck('teen');loadStars();loadHidden();trackVisit();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 </script>
 </body>

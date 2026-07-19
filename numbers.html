@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>TableTalk · Numbers</title>
+<style>
+  :root{--bg:#0e1117;--card:#161b24;--line:#222732;--ink:#fbf7ef;--mute:#7a818c;--accent:#5fd08a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px 18px 60px;max-width:820px;margin:0 auto;}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.5px;}
+  h1 span{opacity:.45;font-weight:600;}
+  .sub{color:var(--mute);font-size:13px;margin:4px 0 22px;}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--mute);margin:26px 0 10px;font-weight:700;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .stat .n{font-size:30px;font-weight:800;letter-spacing:-1px;}
+  .stat .l{font-size:12px;color:var(--mute);margin-top:4px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14px;}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);}
+  th{color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:1px;}
+  tr:last-child td{border-bottom:none;}
+  td.r,th.r{text-align:right;}
+  .bar{height:8px;background:var(--accent);border-radius:6px;min-width:2px;}
+  .muted{color:var(--mute);}
+  #err{color:#e2725b;font-size:13px;margin-top:16px;}
+  .foot{color:var(--mute);font-size:12px;margin-top:32px;}
+  a{color:var(--accent);}
+</style>
+</head>
+<body>
+<h1>Table<span>Talk</span> · Numbers</h1>
+<div class="sub" id="updated">Loading…</div>
+
+<div class="grid" id="stats"></div>
+
+<h2>Decks opened</h2>
+<div id="decks"><div class="muted">…</div></div>
+
+<h2>Saves by deck</h2>
+<div id="saves"><div class="muted">…</div></div>
+
+<h2>Devices</h2>
+<div id="devices"><div class="muted">…</div></div>
+
+<h2>Recent visits</h2>
+<div id="recent"><div class="muted">…</div></div>
+
+<div id="err"></div>
+<div class="foot">Anonymous counts only — no personal data, no cookies. <a href="./">← back to app</a></div>
+
+<script>
+const URL_="https://dycnheibkjjqlmthkkyk.supabase.co";
+const KEY_="sb_publishable_cVz9GemYtiI5sYtt9jzniQ_1UAEkWcn";
+const H={apikey:KEY_,Authorization:'Bearer '+KEY_};
+
+async function count(table,filter){
+  const r=await fetch(URL_+'/rest/v1/'+table+'?select=id'+(filter?'&'+filter:''),{headers:{...H,Prefer:'count=exact',Range:'0-0'}});
+  const cr=r.headers.get('content-range')||'*/0';
+  return parseInt(cr.split('/')[1]||'0',10)||0;
+}
+async function rows(table,q){const r=await fetch(URL_+'/rest/v1/'+table+'?'+q,{headers:H});return r.ok?await r.json():[];}
+function sinceDays(d){return 'created_at=gte.'+new Date(Date.now()-d*864e5).toISOString();}
+function el(html){const d=document.createElement('div');d.innerHTML=html;return d.firstElementChild;}
+
+function barTable(rows){
+  if(!rows.length)return '<div class="muted">No data yet.</div>';
+  const max=Math.max(...rows.map(r=>r.n),1);
+  return '<table><tbody>'+rows.map(r=>
+    '<td style="width:35%">'+r.k+'</td>'+
+    '<td><div class="bar" style="width:'+Math.round(r.n/max*100)+'%"></div></td>'+
+    '<td class="r" style="width:60px">'+r.n+'</td>'
+    ).map(x=>'<tr>'+x+'</tr>').join('')+'</tbody></table>';
+}
+function tally(list,key){const m={};list.forEach(x=>{const k=key(x)||'—';m[k]=(m[k]||0)+1;});
+  return Object.entries(m).map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n);}
+
+const DECKNAMES={teen:'Taco Tinks',couple:'Mr & Mrs',jobs:'Steve Jobs',mantra:'Mantras',vocab:'Wordsmith',jokes:'Giggles'};
+const nice=d=>DECKNAMES[d]||d;
+
+(async function(){
+  try{
+    const [visitsAll,visits7,saves,hides]=await Promise.all([
+      count('page_visits'),count('page_visits',sinceDays(7)),
+      count('tabletalk_events','name=eq.save'),count('tabletalk_events','name=eq.hide'),
+    ]);
+    document.getElementById('stats').append(
+      el('<div class="stat"><div class="n">'+visitsAll+'</div><div class="l">total visits</div></div>'),
+      el('<div class="stat"><div class="n">'+visits7+'</div><div class="l">visits · last 7 days</div></div>'),
+      el('<div class="stat"><div class="n">'+saves+'</div><div class="l">cards saved</div></div>'),
+      el('<div class="stat"><div class="n">'+hides+'</div><div class="l">cards hidden</div></div>'),
+    );
+
+    const [deckEv,saveEv,visitRows]=await Promise.all([
+      rows('tabletalk_events','select=meta&name=eq.deck&order=created_at.desc&limit=5000'),
+      rows('tabletalk_events','select=meta&name=eq.save&order=created_at.desc&limit=5000'),
+      rows('page_visits','select=device,path,created_at&order=created_at.desc&limit=30'),
+    ]);
+
+    document.getElementById('decks').innerHTML=barTable(tally(deckEv,x=>nice(x.meta&&x.meta.deck)));
+    document.getElementById('saves').innerHTML=barTable(tally(saveEv,x=>nice(x.meta&&x.meta.deck)));
+
+    const dev=await rows('page_visits','select=device&order=created_at.desc&limit=5000');
+    document.getElementById('devices').innerHTML=barTable(tally(dev,x=>x.device));
+
+    document.getElementById('recent').innerHTML='<table><thead><tr><th>When</th><th>Device</th><th>Path</th></tr></thead><tbody>'+
+      visitRows.map(v=>'<tr><td>'+new Date(v.created_at).toLocaleString()+'</td><td>'+(v.device||'—')+'</td><td class="muted">'+(v.path||'/')+'</td></tr>').join('')+
+      '</tbody></table>';
+
+    document.getElementById('updated').textContent='Updated '+new Date().toLocaleString();
+  }catch(e){
+    document.getElementById('err').textContent='Could not load stats: '+(e&&e.message||e)+' — make sure the page_visits and tabletalk_events tables exist with public read policies.';
+  }
+})();
+</script>
+</body>
+</html>
