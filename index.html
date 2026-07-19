@@ -92,6 +92,9 @@
   .sitem .tag{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.5;display:block;margin-bottom:8px;}
   .sitem .x{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--mute);font-size:20px;cursor:pointer;}
   .empty{color:var(--mute);text-align:center;padding:60px 30px;font-size:16px;line-height:1.5;}
+  .sheet .foot{flex:0 0 auto;padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);}
+  .reset-btn{width:100%;background:none;border:1px solid var(--line);color:var(--mute);border-radius:14px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
+  .reset-btn.confirm{color:#e2725b;border-color:#e2725b;}
 </style>
 </head>
 <body>
@@ -110,8 +113,9 @@
   <button class="nav" onclick="btnNext()" aria-label="Next">›</button>
 </div>
 <div class="sheet" id="sheet">
-  <h2>Saved questions <button class="close" onclick="closeSheet()">✕</button></h2>
+  <h2>Saved cards <button class="close" onclick="closeSheet()">✕</button></h2>
   <div class="slist" id="slist"></div>
+  <div class="foot"><button class="reset-btn" id="resetBtn">Reset to cold start</button></div>
 </div>
 <script>
 const syncEl=document.getElementById('sync');
@@ -271,7 +275,16 @@ function loadStars(){try{starred=JSON.parse(localStorage.getItem('tt_starred')||
 
 const sheet=document.getElementById('sheet');
 document.getElementById('starredBtn').onclick=()=>{renderSlist();sheet.classList.add('open');};
-function closeSheet(){sheet.classList.remove('open');}
+function closeSheet(){sheet.classList.remove('open');resetBtn.className='reset-btn';resetBtn.textContent='Reset to cold start';}
+const resetBtn=document.getElementById('resetBtn');let resetArmed=false,resetTimer=null;
+resetBtn.onclick=()=>{
+  if(!resetArmed){resetArmed=true;resetBtn.className='reset-btn confirm';resetBtn.textContent='Tap again to confirm — this clears saved & hidden cards';
+    clearTimeout(resetTimer);resetTimer=setTimeout(()=>{resetArmed=false;resetBtn.className='reset-btn';resetBtn.textContent='Reset to cold start';},4000);return;}
+  clearTimeout(resetTimer);resetArmed=false;
+  starred=[];hidden=new Set();persistLocal();persistHidden();
+  resetBtn.className='reset-btn';resetBtn.textContent='Reset to cold start';
+  renderSlist();syncStarBtn();buildOrder();mount();closeSheet();flashSync('reset','ok');
+};
 function renderSlist(){const l=document.getElementById('slist');if(!starred.length){l.innerHTML='<div class="empty">No saved cards yet.<br>Swipe a card up, or tap the star, to keep it here for later.</div>';return;}
   l.innerHTML='';starred.forEach((s,i)=>{const d=document.createElement('div');d.className='sitem';
     d.innerHTML='<span class="tag">'+(DECKNAME[s.deck]||s.deck)+' · '+(CATLABEL[s.cat]||s.cat)+'</span>'+savedHtml(s)+'<button class="x">✕</button>';
