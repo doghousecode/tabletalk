@@ -51,8 +51,8 @@
 <div class="foot">Anonymous counts only — no personal data, no cookies. <a href="./">← back to app</a></div>
 
 <script>
-const URL_="https://dycnheibkjjqlmthkkyk.supabase.co";
-const KEY_="sb_publishable_cVz9GemYtiI5sYtt9jzniQ_1UAEkWcn";
+const URL_="https://xybnrpguguxgqulhbswd.supabase.co";
+const KEY_="sb_publishable_IaeNKz4qCG4RhFlHj8lZgg_61Wk9pIo";
 const H={apikey:KEY_,Authorization:'Bearer '+KEY_};
 
 async function count(table,filter){
@@ -82,7 +82,7 @@ const nice=d=>DECKNAMES[d]||d;
 (async function(){
   try{
     const [visitsAll,visits7,saves,hides]=await Promise.all([
-      count('page_visits'),count('page_visits',sinceDays(7)),
+      count('tabletalk_visits'),count('tabletalk_visits',sinceDays(7)),
       count('tabletalk_events','name=eq.save'),count('tabletalk_events','name=eq.hide'),
     ]);
     document.getElementById('stats').append(
@@ -95,13 +95,13 @@ const nice=d=>DECKNAMES[d]||d;
     const [deckEv,saveEv,visitRows]=await Promise.all([
       rows('tabletalk_events','select=meta&name=eq.deck&order=created_at.desc&limit=5000'),
       rows('tabletalk_events','select=meta&name=eq.save&order=created_at.desc&limit=5000'),
-      rows('page_visits','select=device,path,created_at&order=created_at.desc&limit=30'),
+      rows('tabletalk_visits','select=device,path,created_at&order=created_at.desc&limit=30'),
     ]);
 
     document.getElementById('decks').innerHTML=barTable(tally(deckEv,x=>nice(x.meta&&x.meta.deck)));
     document.getElementById('saves').innerHTML=barTable(tally(saveEv,x=>nice(x.meta&&x.meta.deck)));
 
-    const dev=await rows('page_visits','select=device&order=created_at.desc&limit=5000');
+    const dev=await rows('tabletalk_visits','select=device&order=created_at.desc&limit=5000');
     document.getElementById('devices').innerHTML=barTable(tally(dev,x=>x.device));
 
     document.getElementById('recent').innerHTML='<table><thead><tr><th>When</th><th>Device</th><th>Path</th></tr></thead><tbody>'+
@@ -110,7 +110,7 @@ const nice=d=>DECKNAMES[d]||d;
 
     document.getElementById('updated').textContent='Updated '+new Date().toLocaleString();
   }catch(e){
-    document.getElementById('err').textContent='Could not load stats: '+(e&&e.message||e)+' — make sure the page_visits and tabletalk_events tables exist with public read policies.';
+    document.getElementById('err').textContent='Could not load stats: '+(e&&e.message||e)+' — make sure the tabletalk_visits and tabletalk_events tables exist with public read policies.';
   }
 })();
 </script>

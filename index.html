@@ -121,10 +121,10 @@ function setSync(t,c){baseSync={t:t,c:c||''};clearTimeout(flashTimer);renderSync
 function flashSync(t,c){renderSync(t,c);clearTimeout(flashTimer);flashTimer=setTimeout(()=>renderSync(baseSync.t,baseSync.c),4500);}
 
 /* ---- anonymous usage analytics (visits + interactions only; no personal data) ---- */
-const AN_URL="https://dycnheibkjjqlmthkkyk.supabase.co";
-const AN_KEY="sb_publishable_cVz9GemYtiI5sYtt9jzniQ_1UAEkWcn";
+const AN_URL="https://xybnrpguguxgqulhbswd.supabase.co";
+const AN_KEY="sb_publishable_IaeNKz4qCG4RhFlHj8lZgg_61Wk9pIo";
 function track(table,row){try{if(!navigator.onLine)return;fetch(AN_URL+'/rest/v1/'+table,{method:'POST',keepalive:true,headers:{apikey:AN_KEY,Authorization:'Bearer '+AN_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(row)}).catch(()=>{});}catch(e){}}
-function trackVisit(){track('page_visits',{path:location.pathname||'/',ref:document.referrer||null,device:(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop')});}
+function trackVisit(){track('tabletalk_visits',{path:location.pathname||'/',ref:document.referrer||null,device:(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'mobile':'desktop')});}
 function trackEvent(name,meta){track('tabletalk_events',{name:name,meta:meta||null});}
 
 const DECKS={
